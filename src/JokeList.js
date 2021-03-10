@@ -9,7 +9,9 @@ class JokeList extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            jokes: [],
+            //get localStorage jokes or return empty string if no jokes in storage
+            jokes: JSON.parse(window.localStorage.getItem("jokes") || "[]"),
+            loading: false
         }
         this.getJokes = this.getJokes.bind(this);
         this.handleClick = this.handleClick.bind(this);
@@ -18,7 +20,7 @@ class JokeList extends Component {
     }
 
     componentDidMount() {
-        this.getJokes();
+        if (this.state.jokes.length === 0) this.getJokes();
     }
 
     sortJokes() {
@@ -29,7 +31,7 @@ class JokeList extends Component {
     }
 
     handleClick() {
-        this.getJokes();
+        this.setState({loading: true}, this.getJokes)
     }
 
     handleScore(id, delta) {
@@ -39,25 +41,42 @@ class JokeList extends Component {
             st => ({
                 jokes: st.jokes.map(j =>
                     j.id === id ? { ...j, score: j.score + delta } : j)
-            })
+            }),
+            () =>
+          window.localStorage.setItem("jokes", JSON.stringify(this.state.jokes))
         )
     }
 
     async getJokes() {
-        for (let i = 0; i < 10; i++) {
-            let response = await axios.get(url, { headers: { "Accept": "text/plain" } });
-            //prevent duplicate jokes from being added
-            if (!this.state.jokes.includes(response.data)) {
-                let newJoke = { text: response.data, score: 0, id: uuidv4() }
-                this.setState(state => ({
-                    jokes: [...state.jokes, newJoke]
-                }))
+        try {
+            for (let i = 0; i < 10; i++) {
+                let response = await axios.get(url, { headers: { "Accept": "text/plain" } });
+                //prevent duplicate jokes from being added
+                if (!this.state.jokes.includes(response.data)) {
+                    let newJoke = { text: response.data, score: 0, id: uuidv4() }
+                    this.setState(state => ({
+                        loading: false,
+                        jokes: [...state.jokes, newJoke]
+                    }))
+                }
             }
-
+            window.localStorage.setItem("jokes", JSON.stringify(this.state.jokes));
+        } catch (e) {
+            alert(e)
+            this.setState({ loading: false });
         }
+        
     }
 
     render() {
+        if (this.state.loading) {
+            return (
+              <div className='JokeList-spinner'>
+                <i className='far fa-8x fa-laugh fa-spin' />
+                <h1 className='JokeList-title'>Loading...</h1>
+              </div>
+            );
+          }
         this.sortJokes();
         const allJokes = this.state.jokes.map(joke => (
             <Joke
