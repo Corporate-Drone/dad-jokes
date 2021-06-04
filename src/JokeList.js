@@ -2,8 +2,8 @@ import axios from 'axios';
 import React, { Component } from 'react';
 import Joke from './Joke';
 import { v4 as uuidv4 } from 'uuid';
-const url = 'https://icanhazdadjoke.com/'
 import './JokeList.css';
+const url = 'https://icanhazdadjoke.com/'
 
 class JokeList extends Component {
     constructor(props) {
